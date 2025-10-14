@@ -1,1 +1,25 @@
-[]
+[
+  {
+    "name": "wfweg",
+    "age": "18",
+    "major": "finance",
+    "q1": "rarely",
+    "q2": "shopee",
+    "q3": "rarelyweg",
+    "q4": "shopeeweg",
+    "q5": "rarelywegweg",
+    "q6": "package",
+    "q7": "mid",
+    "q8": "store-only",
+    "q9": "beauty-app",
+    "q10": "discount",
+    "q11": "rating",
+    "rating1": "3",
+    "rating2": "4",
+    "rating3": "3",
+    "rating4": "5",
+    "rating5": "4",
+    "id": 1760480686019,
+    "timestamp": "2025-10-14T22:24:46.019Z"
+  }
+]
