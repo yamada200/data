@@ -116,5 +116,29 @@
     "rating6": "4",
     "id": 1760492785498,
     "timestamp": "2025-10-15T01:46:25.498Z"
+  },
+  {
+    "name": "demo-froms",
+    "age": "18",
+    "major": "finance",
+    "q1": "rarely",
+    "q2": "tiktok",
+    "q3": "rarelyfef",
+    "q4": "tiktokefe",
+    "q5": "rarelyfefeffe",
+    "q6": "variety",
+    "q7": "premium",
+    "q8": "store-only",
+    "q9": "brand-site",
+    "q10": "freebie",
+    "q11": "authentic",
+    "rating1": "5",
+    "rating2": "5",
+    "rating3": "5",
+    "rating4": "5",
+    "rating5": "5",
+    "rating6": "5",
+    "id": 1760493753691,
+    "timestamp": "2025-10-15T02:02:33.691Z"
   }
 ]
