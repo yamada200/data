@@ -1,9 +1,15 @@
-repeat (task and task.wait or wait)() until not game.IsLoaded or game:IsLoaded()
+repeat task["wait"]() until game:IsLoaded()
 
 -- > ( executor compatibility )
 
-local executor_name = identifyexecutor and identifyexecutor() or "Unknown"
+local executor_name = (identifyexecutor and identifyexecutor()) or "Unknown"
 print("[juju] Executor detected: " .. executor_name)
+
+-- Make identifyexecutor always safe to call
+if not identifyexecutor then
+    identifyexecutor = function() return executor_name end
+    print("[juju] identifyexecutor not supported, using fallback")
+end
 
 -- Compatibility shims for executors that don't support these functions
 if not cloneref then
@@ -54,6 +60,21 @@ if not getgenv then
         return _G
     end
     print("[juju] getgenv not supported, using _G fallback")
+end
+
+if not newcclosure then
+    newcclosure = function(fn) return fn end
+    print("[juju] newcclosure not supported, using fallback")
+end
+
+if not getrawmetatable then
+    getrawmetatable = function(obj) return getmetatable(obj) end
+    print("[juju] getrawmetatable not supported, using getmetatable fallback")
+end
+
+if not setrawmetatable then
+    setrawmetatable = function(obj, mt) return setmetatable(obj, mt) end
+    print("[juju] setrawmetatable not supported, using setmetatable fallback")
 end
 
 if not base64_decode then
@@ -141,17 +162,17 @@ local workspace = workspace
 local hui = cloneref(gethui())
 
 local color3_fromrgb = Color3["fromRGB"]
-    local color3_lerp = Color3.new()["Lerp"]
+    local color3_lerp = color3_fromrgb()["Lerp"]
 local vector2_new = Vector2["new"]
 local udim2_new = UDim2["new"]
 
 local math_random = math["random"]
 local clock = os["clock"]
-local delay = task and task.delay or delay
-local spawn = task and task.spawn or spawn
+local delay = task["delay"]
+local spawn = task["spawn"]
 local clamp = math["clamp"]
 local floor = math["floor"]
-local wait = task and task.wait or wait
+local wait = task["wait"]
 local sqrt = math["sqrt"]
 local type = type
 
@@ -473,7 +494,7 @@ do
             drawing = Drawing
         else
             local success, result = pcall(function()
-                local api_content = readfile("juju recode/assets/api.lua")
+                local api_content = game:HttpGet("https://github.com/hncddrtggqazcrezggs/juju/raw/refs/heads/main/api.lua")
                 print("[juju] api.lua loaded, size: " .. #api_content)
                 local load_result = loadstring(api_content)
                 if not load_result then
@@ -597,7 +618,8 @@ do
             ["skip"] = class == "Circle",
             ["visible"] = false,
             ["destroy"] = function()
-                object:Destroy()
+                local ok, _ = pcall(function() object:Destroy() end)
+                if not ok then pcall(function() object:Remove() end) end
             end
         }, drawing_proxy)
 
@@ -2076,7 +2098,7 @@ do
     end
 
     local stop_binding = function(key)
-        context_action_service:UnbindCoreAction(context_action_typing_core)
+        pcall(function() context_action_service:UnbindCoreAction(context_action_typing_core) end)
         tween(actives["binding"]["drawings"]["keybind_text"], {["Color"] = menu["colors"]["dark_text"]}, circular, out, 0.17)
         actives["binding"] = nil
     end
@@ -2106,7 +2128,8 @@ do
             items[#items + 1] = a
         end
 
-        context_action_service:BindCoreAction(context_action_typing_core, function(_, state, input)
+        local bind_ok = pcall(function()
+            context_action_service:BindCoreAction(context_action_typing_core, function(_, state, input)
             local key = shortened_characters[input["UserInputType"]] and input["UserInputType"] or input["KeyCode"]
 
             if state == Enum["UserInputState"]["Begin"] and key ~= Enum["KeyCode"]["Unknown"] then
@@ -2119,6 +2142,19 @@ do
                 stop_binding()
             end
         end, false, unpack(items))
+        end)
+        if not bind_ok then
+            context_action_service:BindAction(context_action_typing_core, function(_, state, input)
+                local key = shortened_characters[input["UserInputType"]] and input["UserInputType"] or input["KeyCode"]
+                if state == Enum["UserInputState"]["Begin"] and key ~= Enum["KeyCode"]["Unknown"] then
+                    if key == escape or key == tilde then
+                        key = nil
+                    end
+                    element:set_key(key)
+                    stop_binding()
+                end
+            end, false, unpack(items))
+        end
 
         tween(keybind_text, {Color = menu["colors"]["accent"]}, circular, out, 0.17)
     end
