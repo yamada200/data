@@ -1,4 +1,4 @@
-
+repeat task["wait"]() until game:IsLoaded()
 
 -- > ( executor compatibility )
 
@@ -11,10 +11,19 @@ if not identifyexecutor then
     print("[juju] identifyexecutor not supported, using fallback")
 end
 
--- Compatibility shims for executors that don't support these functions
-if not cloneref then
-    cloneref = function(obj) return obj end
-    print("[juju] cloneref not supported, using fallback")
+-- Compatibility shims for executors with buggy or missing functions
+local _old_cloneref = cloneref
+cloneref = function(obj)
+    if not _old_cloneref then return obj end
+    local success, result = pcall(_old_cloneref, obj)
+    return success and result or obj
+end
+
+local _old_clonefunction = clonefunction
+clonefunction = function(obj)
+    if not _old_clonefunction then return obj end
+    local success, result = pcall(_old_clonefunction, obj)
+    return success and result or obj
 end
 
 if not gethui then
@@ -32,13 +41,14 @@ if not gethui then
     print("[juju] gethui not supported, using fallback")
 end
 
-if not getconnections then
-    getconnections = function(signal)
-        local connections = {}
-        -- Return empty table as fallback
-        return connections
+local _old_getconnections = getconnections
+getconnections = function(signal)
+    if not _old_getconnections then return {} end
+    local success, result = pcall(_old_getconnections, signal)
+    if success and result and type(result) == "table" then
+        return result
     end
-    print("[juju] getconnections not supported, using fallback")
+    return {}
 end
 
 if not getreg then
@@ -96,8 +106,18 @@ if not base64_decode then
     print("[juju] base64_decode not supported, using custom implementation")
 end
 
+if not request then
+    request = (syn and syn.request) or (http and http.request) or http_request or function() return {Body = "", StatusCode = 404} end
+    print("[juju] request alias created/fallback used")
+end
+
+if not cleardrawcache then
+    cleardrawcache = function() end
+    print("[juju] cleardrawcache not supported, using fallback")
+end
+
 if identifyexecutor and identifyexecutor() == "AWP" then
-    cleardrawcache()
+    pcall(cleardrawcache)
 end
 
 -- > ( luraph variables )
