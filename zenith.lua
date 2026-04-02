@@ -1,4 +1,11 @@
-repeat task["wait"]() until game:IsLoaded()
+if not game:IsLoaded() then
+    local success, err = pcall(function()
+        game.Loaded:Wait()
+    end)
+    if not success then
+        repeat task.wait() until game:IsLoaded()
+    end
+end
 
 -- > ( executor compatibility )
 
@@ -7,27 +14,27 @@ print("[juju] Executor detected: " .. executor_name)
 
 -- Make identifyexecutor always safe to call
 if not identifyexecutor then
-    identifyexecutor = function() return executor_name end
+    getgenv().identifyexecutor = function() return executor_name end
     print("[juju] identifyexecutor not supported, using fallback")
 end
 
 -- Compatibility shims for executors with buggy or missing functions
 local _old_cloneref = cloneref
-cloneref = function(obj)
+getgenv().cloneref = function(obj)
     if not _old_cloneref then return obj end
     local success, result = pcall(_old_cloneref, obj)
     return success and result or obj
 end
 
 local _old_clonefunction = clonefunction
-clonefunction = function(obj)
+getgenv().clonefunction = function(obj)
     if not _old_clonefunction then return obj end
     local success, result = pcall(_old_clonefunction, obj)
     return success and result or obj
 end
 
 if not gethui then
-    gethui = function()
+    getgenv().gethui = function()
         local coregui = game:GetService("CoreGui")
         -- Try to find existing ScreenGui or create one
         local existing = coregui:FindFirstChild("juju_hui")
@@ -42,7 +49,7 @@ if not gethui then
 end
 
 local _old_getconnections = getconnections
-getconnections = function(signal)
+getgenv().getconnections = function(signal)
     if not _old_getconnections then return {} end
     local success, result = pcall(_old_getconnections, signal)
     if success and result and type(result) == "table" then
@@ -52,15 +59,15 @@ getconnections = function(signal)
 end
 
 if not getreg then
-    getreg = function()
-        return {}
+    getgenv().getreg = function()
+        return debug.getregistry() or {}
     end
-    print("[juju] getreg not supported, using fallback")
+    print("[juju] getreg not supported, using debug.getregistry fallback")
 end
 
 if not islclosure then
-    islclosure = function(func)
-        return true
+    getgenv().islclosure = function(func)
+        return debug.info(func, "s") ~= "[C]"
     end
     print("[juju] islclosure not supported, using fallback")
 end
@@ -73,22 +80,38 @@ if not getgenv then
 end
 
 if not newcclosure then
-    newcclosure = function(fn) return fn end
+    getgenv().newcclosure = function(fn) return fn end
     print("[juju] newcclosure not supported, using fallback")
 end
 
 if not getrawmetatable then
-    getrawmetatable = function(obj) return getmetatable(obj) end
+    getgenv().getrawmetatable = function(obj) return getmetatable(obj) end
     print("[juju] getrawmetatable not supported, using getmetatable fallback")
 end
 
 if not setrawmetatable then
-    setrawmetatable = function(obj, mt) return setmetatable(obj, mt) end
+    getgenv().setrawmetatable = function(obj, mt) return setmetatable(obj, mt) end
     print("[juju] setrawmetatable not supported, using setmetatable fallback")
 end
 
+if not getnamecallmethod then
+    getgenv().getnamecallmethod = function() return "" end
+end
+
+if not setnamecallmethod then
+    getgenv().setnamecallmethod = function() end
+end
+
+if not checkcaller then
+    getgenv().checkcaller = function() return false end
+end
+
+if not getrenv then
+    getgenv().getrenv = function() return _G end
+end
+
 if not base64_decode then
-    base64_decode = function(data)
+    getgenv().base64_decode = function(data)
         local b = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
         data = string.gsub(data, '[^'..b..'=]', '')
         return (data:gsub('.', function(x)
@@ -107,12 +130,12 @@ if not base64_decode then
 end
 
 if not request then
-    request = (syn and syn.request) or (http and http.request) or http_request or function() return {Body = "", StatusCode = 404} end
+    getgenv().request = (syn and syn.request) or (http and http.request) or http_request or function() return {Body = "", StatusCode = 404} end
     print("[juju] request alias created/fallback used")
 end
 
 if not cleardrawcache then
-    cleardrawcache = function() end
+    getgenv().cleardrawcache = function() end
     print("[juju] cleardrawcache not supported, using fallback")
 end
 
