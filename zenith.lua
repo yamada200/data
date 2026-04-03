@@ -1,13 +1,14 @@
-if not game:IsLoaded() then
-    local success, err = pcall(function()
-        game.Loaded:Wait()
-    end)
-    if not success then
-        repeat task.wait() until game:IsLoaded()
-    end
-end
+repeat task["wait"]() until game:IsLoaded()
 
 -- > ( executor compatibility )
+
+-- getgenv fallback must be defined FIRST since all other shims use it
+if not getgenv then
+    getgenv = function()
+        return _G
+    end
+    print("[juju] getgenv not supported, using _G fallback")
+end
 
 local executor_name = (identifyexecutor and identifyexecutor()) or "Unknown"
 print("[juju] Executor detected: " .. executor_name)
@@ -60,24 +61,22 @@ end
 
 if not getreg then
     getgenv().getreg = function()
-        return debug.getregistry() or {}
+        local ok, reg = pcall(function() return debug.getregistry() end)
+        return (ok and reg) or {}
     end
     print("[juju] getreg not supported, using debug.getregistry fallback")
 end
 
 if not islclosure then
     getgenv().islclosure = function(func)
-        return debug.info(func, "s") ~= "[C]"
+        local ok, src = pcall(function() return debug.info(func, "s") end)
+        if ok then return src ~= "[C]" end
+        return true
     end
     print("[juju] islclosure not supported, using fallback")
 end
 
-if not getgenv then
-    getgenv = function()
-        return _G
-    end
-    print("[juju] getgenv not supported, using _G fallback")
-end
+-- (getgenv fallback already defined at the top of the file)
 
 if not newcclosure then
     getgenv().newcclosure = function(fn) return fn end
@@ -126,7 +125,6 @@ if not base64_decode then
             return string.char(c)
         end))
     end
-    print("[juju] base64_decode not supported, using custom implementation")
 end
 
 if not request then
@@ -578,8 +576,8 @@ do
 		[Enum.KeyCode.ButtonB] = "bb",
 		[Enum.KeyCode.ButtonR1] = "r1",
 		[Enum.KeyCode.ButtonR2] = "r2",
-		[Enum.KeyCode.ButtonR1] = "l1",
-		[Enum.KeyCode.ButtonR2] = "l2",
+		[Enum.KeyCode.ButtonL1] = "l1",
+		[Enum.KeyCode.ButtonL2] = "l2",
 		[Enum.KeyCode.DPadLeft] = "dpl",
 		[Enum.KeyCode.DPadRight] = "dpr",
 		[Enum.KeyCode.DPadUp] = "dpup",
@@ -8239,7 +8237,7 @@ do
 
             context_action_service:UnbindAction(context_action_click)
             context_action_service:UnbindAction(context_action_typing)
-            context_action_service:UnbindCoreAction(context_action_typing_core)
+            pcall(function() context_action_service:UnbindCoreAction(context_action_typing_core) end)
             context_action_service:UnbindAction(context_action_scroll)
 
             env["getrawmetatable"] = real
@@ -23664,7 +23662,7 @@ do
     end
 
     new_notification(
-        "welcome back to juju, "..username,
+        "welcome back to zenith.win, "..username,
         5,
         color3_fromrgb(255, 255, 255),
         avatar or base64_decode("iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAAYdEVYdFNvZnR3YXJlAFBhaW50Lk5FVCA1LjEuMvu8A7YAAAC2ZVhJZklJKgAIAAAABQAaAQUAAQAAAEoAAAAbAQUAAQAAAFIAAAAoAQMAAQAAAAIAAAAxAQIAEAAAAFoAAABphwQAAQAAAGoAAAAAAAAADHcBAOgDAAAMdwEA6AMAAFBhaW50Lk5FVCA1LjEuMgADAACQBwAEAAAAMDIzMAGgAwABAAAAAQAAAAWgBAABAAAAlAAAAAAAAAACAAEAAgAEAAAAUjk4AAIABwAEAAAAMDEwMAAAAADu6i0YxswAAgAAAGBJREFUOE+tkdEOgCAIRdH//+eCO3BG16TWeUEYB5zK7xyKHynNI9g1G01BRJZYDOjqjPpN3G2lG2cpGqIWOWUW89nwFHSPIG95DRNLwypNl6sapcmMqjiemAmPX/ANkROaKkTiEnqHHQAAAABJRU5ErkJggg==")
