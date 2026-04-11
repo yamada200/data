@@ -64,11 +64,6 @@ local remove = table.remove
 local concat = table.concat
 -- 
 
-getgenv().raeleigh = getgenv().raeleigh or {
-    drawings = {},
-    instances = {}
-}
-
 -- library init
 local library = {
     directory = "raeleigh",
@@ -398,10 +393,6 @@ local config_holder
     end
 
     function library:new_drawing(class, properties)
-        if getgenv()._PROXY then
-            return getgenv()._PROXY.new(class, properties)
-        end
-
         local ins = Drawing.new(class)
 
         for _, v in next, properties do 
@@ -5930,7 +5921,6 @@ local config_holder
     end 
 -- 
 -- 
-
 
 library.themes = themes
 return library
